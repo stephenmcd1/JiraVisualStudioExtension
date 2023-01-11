@@ -1,0 +1,384 @@
+﻿<UserControl x:Class="JiraVisualStudioExtension.UI.SectionContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:teamExplorer="clr-namespace:Microsoft.TeamFoundation.Controls.WPF.TeamExplorer;assembly=Microsoft.TeamFoundation.Controls"
+             xmlns:mtcw="clr-namespace:Microsoft.TeamFoundation.Controls.WPF;assembly=Microsoft.TeamFoundation.Controls"
+             xmlns:pendingChanges="clr-namespace:Microsoft.TeamFoundation.VersionControl.Controls.PendingChanges;assembly=Microsoft.TeamFoundation.VersionControl.Controls"
+             xmlns:mvvm="clr-namespace:Microsoft.TeamFoundation.MVVM;assembly=Microsoft.TeamFoundation.Controls"
+             xmlns:converters="clr-namespace:Microsoft.TeamFoundation.Controls.WPF.Converters;assembly=Microsoft.TeamFoundation.Controls"
+             xmlns:utils="clr-namespace:JiraVisualStudioExtension.Utilities"
+             xmlns:viewModels="clr-namespace:JiraVisualStudioExtension.ViewModels"
+             x:Name="ThisSectionContent"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="300"
+             Padding="6 6 12 6"
+             d:DataContext="{d:DesignInstance viewModels:SectionContentViewModel }">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Merge in the SharedResources from the standard TFS dll so we can use some of their resources -->
+                <ResourceDictionary
+                    Source="pack://application:,,,/Microsoft.TeamFoundation.Controls;component/WPF/SharedResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <converters:TrueToVisibleConverter x:Key="TrueToVisibleConverter" />
+            <converters:NullToVisibleConverter x:Key="NullToVisibleConverter" />
+
+            <ToolTip x:Key="ItemTooltip" Placement="Left" mc:Ignorable="d"
+                     d:DataContext="{d:DesignInstance viewModels:JiraIssueViewModel}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,6,3"
+                               Text="{Binding Path=Key}" FontWeight="Bold" />
+                    <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Margin="0,0,6,3">
+                        <TextBlock Text="{Binding Path=Summary}" />
+                        <TextBlock>
+                            <TextBlock.Inlines>
+                                <Run Text="{Binding Path=ParentKey}" />: <Run Text="{Binding Path=Parent}" />
+                            </TextBlock.Inlines>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" />
+                    </StackPanel>
+
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Margin="0,10,6,3" Text="Fix Versions: " />
+                    <TextBlock Grid.Row="3" Grid.Column="1" Margin="0,10,0,3" Text="{Binding Path=FixVersions}"
+                               FontWeight="DemiBold" />
+
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Margin="0,0,6,3" Text="Sprint: " />
+                    <TextBlock Grid.Row="4" Grid.Column="1" Margin="0,0,0,3" Text="{Binding Path=Sprint}"
+                               FontWeight="DemiBold" />
+
+                    <TextBlock Grid.Row="5" Grid.Column="0" Margin="0,0,6,3" Text="Status: " />
+                    <TextBlock Grid.Row="5" Grid.Column="1" Margin="0,0,0,3" Text="{Binding Path=Status}"
+                               FontWeight="DemiBold" />
+
+                </Grid>
+            </ToolTip>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <StackPanel>
+        <StackPanel Orientation="Horizontal" Visibility="{Binding IsLoggedOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <teamExplorer:DropDownLink Text="Find Issue by Key" ShowArrow="True"
+                                       DropDownMenuCommand="{Binding Path=SearchByKeyCommand}"
+                                       DropDownMenuCommandParameter="True" />
+
+            <Separator Style="{StaticResource VerticalSeparator}" />
+            <teamExplorer:DropDownLink Text="{Binding CurrentUserDisplayName}" IsEnabled="{Binding IsLoggedOn}">
+                <teamExplorer:DropDownLink.DropDownMenu>
+                    <ContextMenu Placement="Right">
+                        <MenuItem Header="Log Out" Command="{Binding LogOutCommand}" />
+                    </ContextMenu>
+                </teamExplorer:DropDownLink.DropDownMenu>
+            </teamExplorer:DropDownLink>
+
+        </StackPanel>
+
+        <pendingChanges:ErrorWarningBox Margin="0 5"
+                                        Visibility="{Binding Path=IsErrorActive, Converter={StaticResource BooleanToVisibilityConverter}}"
+
+                                        CloseCommand="{Binding DismissErrorsCommand}">
+            <pendingChanges:ErrorWarningBox.MessageContent>
+                <TextBlock Foreground="Black" Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+            </pendingChanges:ErrorWarningBox.MessageContent>
+        </pendingChanges:ErrorWarningBox>
+
+        <Border BorderThickness="0" Padding="5" Background="{StaticResource EmbeddedDialogBackgroundBrushKey}"
+                Visibility="{Binding IsSearchingByKey, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel>
+                <mtcw:LabeledTextBox x:Name="SearchByKeyBox" Margin="0 0 0 5" AcceptsReturn="False"
+                                     HintText="Enter the Key to find" IsRequired="True">
+                    <mtcw:LabeledTextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding AddByKeyCommand}"
+                                    CommandParameter="{Binding ElementName=SearchByKeyBox, Path=Text}" />
+                    </mtcw:LabeledTextBox.InputBindings>
+                </mtcw:LabeledTextBox>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Add" Margin="0 0 5 0" Command="{Binding AddByKeyCommand}"
+                            CommandParameter="{Binding ElementName=SearchByKeyBox, Path=Text}" />
+                    <teamExplorer:TextLink VerticalContentAlignment="Center" Text="Cancel"
+                                           Command="{Binding SearchByKeyCommand}"
+                                           CommandParameter="False" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Visibility="{Binding Initializing, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TextBlock Text="Initializing, please wait..." />
+        </StackPanel>
+        <StackPanel
+            Visibility="{Binding Initializing, Converter={StaticResource TrueToVisibleConverter}, ConverterParameter=Invert}">
+
+            <Grid
+                Visibility="{Binding Path=IsLoggedOn, Converter={StaticResource TrueToVisibleConverter}, ConverterParameter=Invert}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TextBlock VerticalAlignment="Center" Text="Email:" />
+                <TextBlock VerticalAlignment="Center" Text="Password / API Key:" Grid.Row="1" Grid.Column="0" />
+                <TextBlock VerticalAlignment="Center" Text="Jira Subdomain:" Grid.Row="2" Grid.Column="0" />
+
+                <mtcw:LabeledTextBox Text="{Binding UserNameEntry, Mode=TwoWay}" Margin="5 5 0 5" Grid.Row="0"
+                                     Grid.Column="1" />
+
+                <PasswordBox CaretBrush="{StaticResource TextBoxTextBrushKey}"
+                             Foreground="{StaticResource TextBoxTextBrushKey}"
+                             Background="{StaticResource TextBoxBrushKey}"
+                             BorderBrush="{StaticResource TextBoxBorderBrushKey}"
+                             mvvm:PasswordBoxAssistant.Password="{Binding Path=PasswordEntry}"
+                             Margin="5 5 0 5" Grid.Row="1" Grid.Column="1">
+                    <PasswordBox.Template>
+                        <ControlTemplate
+                            TargetType="{x:Type PasswordBox}">
+                            <Border
+                                Name="bd"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                Background="{TemplateBinding Background}"
+                                SnapsToDevicePixels="True">
+                                <ScrollViewer Name="PART_ContentHost" Margin="0" />
+                            </Border>
+                        </ControlTemplate>
+                    </PasswordBox.Template>
+                </PasswordBox>
+                
+                <mtcw:LabeledTextBox Text="{Binding SubdomainEntry, Mode=TwoWay}" Margin="5 5 0 5" Grid.Row="2"
+                                     Grid.Column="1" />
+
+                <StackPanel Margin="0 5 0 0" HorizontalAlignment="Right" Orientation="Horizontal" Grid.Row="3"
+                            Grid.ColumnSpan="2" Grid.Column="0">
+                    <Button Command="{Binding LogOnCommand}"
+                            CommandParameter="{Binding ElementName=PasswordBox, Path=Password}">
+                        Log On
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Visibility="{Binding Path=IsLoggedOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+
+                <StackPanel Margin="0 5 2 2" Orientation="Horizontal">
+                    <TextBlock Text="Current Issue" FontWeight="Bold" />
+                    <TextBlock Text=" (" />
+                    <teamExplorer:TextLink Text="Clear" Command="{Binding ClearCurrentItemCommand}" />
+                    <TextBlock Text=")" />
+                </StackPanel>
+
+                <Border Padding="6" BorderThickness="1"
+                        BorderBrush="{DynamicResource {x:Static utils:Brushes.CommandBarSelectedBorderKey}}"
+                        Background="{StaticResource EmbeddedDialogBackgroundBrushKey}">
+                    <Grid>
+                        <TextBlock Text="Nothing selected" Foreground="{StaticResource SubduedTextBrushKey}"
+                                   Visibility="{Binding Path=CurrentItem, Converter={StaticResource NullToVisibleConverter}}" />
+
+                        <StackPanel DataContext="{Binding CurrentItem}"
+                                    Visibility="{Binding Converter={StaticResource NullToVisibleConverter}, ConverterParameter=Invert}">
+                            <ContentControl FontSize="13" FontWeight="SemiBold">
+                            <DockPanel>
+                                <teamExplorer:TextLink Text="{Binding Key}" Command="{Binding OpenItemCommand}" />
+                                <TextBlock Text=": " />
+                                <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
+                            </DockPanel>
+                            </ContentControl>
+                            <TextBlock Margin="0 5 0 0" Text="Parent" FontWeight="SemiBold" />
+                            <DockPanel>
+                                <teamExplorer:TextLink Text="{Binding ParentKey}"
+                                                       Command="{Binding OpenParentCommand}" />
+                                <TextBlock Text=": " />
+                                <TextBlock Text="{Binding Parent}" TextWrapping="Wrap" />
+                            </DockPanel>
+
+                            <TextBlock Margin="0 5 0 0" Text="Fix Versions - Sprint" FontWeight="SemiBold" />
+                            <TextBlock TextWrapping="Wrap">
+                                <TextBlock.Inlines>
+                                    <Run Text="{Binding FixVersions}" /> - <Run Text="{Binding Sprint}" />
+                                </TextBlock.Inlines>
+                            </TextBlock>
+
+                            <TextBlock Margin="0 5 0 0" Text="Status" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding Status}"/>
+
+                            <StackPanel Margin="0,10,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <teamExplorer:TextLink Text="Discard" Command="{Binding DiscardChangesCommand}"
+                                                       VerticalAlignment="Center" />
+                                <Button Margin="5 0 0 0" Content="Save" Command="{Binding SaveChangesCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <StackPanel Margin="0 5 0 0" Orientation="Horizontal">
+                    <TextBlock Text="Recent Issues" FontWeight="Bold" />
+                    <TextBlock Text=" (" />
+                    <teamExplorer:TextLink Text="Toggle Filter" Command="{Binding ToggleFilterCommand}" />
+                    <TextBlock Text=")" />
+                </StackPanel>
+
+                <Border Padding="5" Background="{StaticResource EmbeddedDialogBackgroundBrushKey}" Visibility="{Binding Path=IsFilterActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <DockPanel>
+                        <CheckBox DockPanel.Dock="Left" Margin="0 0 15 0" IsChecked="{Binding ExcludeDoneIssues}" VerticalAlignment="Center"
+                                  Content="Exclude Done" />
+                        <mtcw:LabeledTextBox AcceptsReturn="False"
+                                             HintText="Filter by Issue Summary" Text="{Binding SummaryFilter, Mode=TwoWay}">
+                            <mtcw:LabeledTextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding RefreshCommand}"/>
+                            </mtcw:LabeledTextBox.InputBindings>
+                        </mtcw:LabeledTextBox>
+                    </DockPanel>
+                </Border>
+
+                <ListView ItemsSource="{Binding Path=CurrentList.Items}" BorderThickness="0" x:Name="TheListView"
+                          SelectionMode="Single" ScrollViewer.HorizontalScrollBarVisibility="Disabled" utils:ListViewBehaviors.IsAutoUpdatingColumnWidths="true"
+
+                          mvvm:ItemsControlBehaviour.ItemDoubleClickCommand="{Binding SelectItemCommand}">
+                    <ListView.View>
+                        <GridView mc:Ignorable="d"
+                                  d:DataContext="{d:DesignInstance viewModels:JiraIssueViewModel}">
+                            <GridView.ColumnHeaderContainerStyle>
+                                <Style>
+                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
+                                </Style>
+                            </GridView.ColumnHeaderContainerStyle>
+                            <GridViewColumn>
+                                <GridViewColumnHeader Content="Key" />
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <!-- The grid adds a 6px margin that we want to 'undo' on this first column. See: https://social.msdn.microsoft.com/Forums/vstudio/en-US/d76d13f4-7f55-48d5-a176-11b3fe9610b8/how-to-eliminate-the-space-between-gridviewcolumn-cells-in-listview-control?forum=wpf -->
+                                        <teamExplorer:TextLink Margin="-6 0 0 0" Text="{Binding Key}"
+                                                               Command="{Binding OpenItemCommand}" TextTrimming="None" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn>
+                                <GridViewColumnHeader Content="Status" />
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+
+                                        <Rectangle Width="10" Height="10" Fill="{Binding StatusBrush}" RadiusX="5" RadiusY="5"/>
+
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn>
+                                <GridViewColumnHeader Content="Summary" />
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Path=Summary}" TextTrimming="CharacterEllipsis" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type ListViewItem}">
+                                        <Border BorderBrush="Transparent" BorderThickness="1" x:Name="ListItemBorder"
+                                                Background="{TemplateBinding Background}">
+                                            <GridViewRowPresenter HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                  Width="Auto"
+                                                                  Margin="2"
+                                                                  Content="{TemplateBinding Content}" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding Selected}" Value="True" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Background"
+                                                        Value="{DynamicResource {x:Static utils:Brushes.CommandBarSelectedKey}}" />
+                                                <Setter TargetName="ListItemBorder" Property="BorderBrush"
+                                                        Value="{DynamicResource {x:Static utils:Brushes.CommandBarSelectedBorderKey}}" />
+                                            </MultiDataTrigger>
+
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition
+                                                        Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}"
+                                                        Value="True" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Background"
+                                                        Value="{DynamicResource {x:Static utils:Brushes.CommandBarHoverKey}}" />
+                                            </MultiDataTrigger>
+
+
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding Selected}" Value="True" />
+                                                    <Condition
+                                                        Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}"
+                                                        Value="True" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Background"
+                                                        Value="{DynamicResource {x:Static utils:Brushes.CommandBarHoverOverSelectedKey}}" />
+                                            </MultiDataTrigger>
+
+
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource {x:Static utils:Brushes.ToolWindowTextKey}}" />
+                            <Setter Property="ToolTip" Value="{StaticResource ItemTooltip}" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right">
+                        <!--
+                        <Hyperlink x:Name="HyperLink1" TextDecorations="" ToolTip="First Page" Command="{Binding Path=CurrentList.MoveToFirstPageCommand}">
+                             <Polygon Fill="{Binding ElementName=HyperLink1, Path=Foreground}" Margin="2,0,0,1" Points="8,0 8,12 2,7 2,12 0,12 0,0 2,0 2,6 8,0" />
+                        </Hyperlink>
+                         -->
+                        <Hyperlink x:Name="HyperLink2" TextDecorations="" ToolTip="Previous Page"
+                                   Command="{Binding Path=CurrentList.MoveToPreviousPageCommand}">
+                            <Polygon Fill="{Binding ElementName=HyperLink2, Path=Foreground}" Margin="2,0,0,1"
+                                     Points="6,0 6,12 0,6 6,0" />
+                        </Hyperlink>
+                        <Hyperlink x:Name="HyperLink3" TextDecorations="" ToolTip="Next Page"
+                                   Command="{Binding Path=CurrentList.MoveToNextPageCommand}">
+                            <Polygon Fill="{Binding ElementName=HyperLink3, Path=Foreground}" Margin="2,0,0,1"
+                                     Points="0,0 0,12 6,6 0,0" />
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock Text="{Binding CurrentList.PageInfo}" />
+                </DockPanel>
+            </StackPanel>
+
+        </StackPanel>
+    </StackPanel>
+
+
+</UserControl>

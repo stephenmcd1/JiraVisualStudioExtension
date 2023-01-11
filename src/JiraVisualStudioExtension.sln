@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32901.215
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JiraVisualStudioExtension.VS2022", "JiraVisualStudioExtension.VS2022\JiraVisualStudioExtension.VS2022.csproj", "{06726066-5908-4B28-82CD-34A29045F801}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencies", "{57D1E2C7-E0C4-49E5-A948-EFC85BBF4DAD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VS2022", "VS2022", "{14AEA1C8-AD20-4CB1-B07F-9BBD4B237C94}"
+	ProjectSection(SolutionItems) = preProject
+		Dependencies\VS2022\Microsoft.TeamFoundation.Client.dll = Dependencies\VS2022\Microsoft.TeamFoundation.Client.dll
+		Dependencies\VS2022\Microsoft.TeamFoundation.Controls.dll = Dependencies\VS2022\Microsoft.TeamFoundation.Controls.dll
+		Dependencies\VS2022\Microsoft.TeamFoundation.VersionControl.Client.dll = Dependencies\VS2022\Microsoft.TeamFoundation.VersionControl.Client.dll
+		Dependencies\VS2022\Microsoft.TeamFoundation.VersionControl.Controls.dll = Dependencies\VS2022\Microsoft.TeamFoundation.VersionControl.Controls.dll
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{06726066-5908-4B28-82CD-34A29045F801}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06726066-5908-4B28-82CD-34A29045F801}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06726066-5908-4B28-82CD-34A29045F801}.Debug|x86.ActiveCfg = Debug|x86
+		{06726066-5908-4B28-82CD-34A29045F801}.Debug|x86.Build.0 = Debug|x86
+		{06726066-5908-4B28-82CD-34A29045F801}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06726066-5908-4B28-82CD-34A29045F801}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06726066-5908-4B28-82CD-34A29045F801}.Release|x86.ActiveCfg = Release|x86
+		{06726066-5908-4B28-82CD-34A29045F801}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{14AEA1C8-AD20-4CB1-B07F-9BBD4B237C94} = {57D1E2C7-E0C4-49E5-A948-EFC85BBF4DAD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FCDD1B2E-FB86-492B-978F-A9D635E8DA18}
+	EndGlobalSection
+EndGlobal
