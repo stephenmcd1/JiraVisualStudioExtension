@@ -9,7 +9,7 @@ using Microsoft.TeamFoundation.VersionControl.Controls.Extensibility;
 
 namespace JiraVisualStudioExtension.TeamExplorer
 {
-    [TeamExplorerSection("d7526377-03bd-4ee0-97ff-4e75e83cc947", TeamExplorerPageIds.PendingChanges, 34)]
+    [TeamExplorerSection("dd330e16-f8ee-454e-b8f9-1580cbcd18e2", TeamExplorerPageIds.PendingChanges, 33)]
     public class JiraWorkItemSection : BaseTeamExplorerSection<SectionContent>
     {
         public OptionsHelper Options { get; private set; }
