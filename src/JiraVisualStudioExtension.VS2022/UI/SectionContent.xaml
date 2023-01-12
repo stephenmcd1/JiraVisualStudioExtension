@@ -10,6 +10,7 @@
              xmlns:converters="clr-namespace:Microsoft.TeamFoundation.Controls.WPF.Converters;assembly=Microsoft.TeamFoundation.Controls"
              xmlns:utils="clr-namespace:JiraVisualStudioExtension.Utilities"
              xmlns:viewModels="clr-namespace:JiraVisualStudioExtension.ViewModels"
+             xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              x:Name="ThisSectionContent"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
@@ -239,6 +240,28 @@
                     <TextBlock Text="Recent Issues" FontWeight="Bold" />
                     <TextBlock Text=" (" />
                     <teamExplorer:TextLink Text="Toggle Filter" Command="{Binding ToggleFilterCommand}" />
+                    <TextBlock Text=" - "/>
+                    <teamExplorer:DropDownLink Text="{Binding IssueTypeText}">
+                        <teamExplorer:DropDownLink.DropDownMenu>
+                            <ContextMenu  Placement="Right" ItemsSource="{Binding IssueTypes}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="Closed">
+                                        <b:InvokeCommandAction Command="{Binding ApplyIssueTypesCommand}"/>
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                                <ContextMenu.ItemContainerStyle>
+                                    <Style>
+                                        <Setter Property="MenuItem.Header" Value="{Binding IssueType.Name}"></Setter>
+                                        <Setter Property="MenuItem.ToolTip" Value="{Binding IssueType.Description}"></Setter>
+                                        <Setter Property="MenuItem.IsChecked" Value="{Binding IsChecked, Mode=TwoWay}"></Setter>
+                                        <Setter Property="MenuItem.IsCheckable" Value="True"></Setter>
+                                        <Setter Property="MenuItem.StaysOpenOnClick" Value="True"></Setter>
+                                        <Setter Property="MenuItem.Foreground" Value="{DynamicResource {x:Static utils:Brushes.ToolWindowTextKey}}"/>
+                                    </Style>
+                                </ContextMenu.ItemContainerStyle>
+                            </ContextMenu>
+                        </teamExplorer:DropDownLink.DropDownMenu>
+                    </teamExplorer:DropDownLink>
                     <TextBlock Text=")" />
                 </StackPanel>
 

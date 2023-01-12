@@ -12,6 +12,14 @@ namespace JiraVisualStudioExtension.TeamExplorer
     [TeamExplorerSection("dd330e16-f8ee-454e-b8f9-1580cbcd18e2", TeamExplorerPageIds.PendingChanges, 33)]
     public class JiraWorkItemSection : BaseTeamExplorerSection<SectionContent>
     {
+        static JiraWorkItemSection()
+        {
+            //For some reason, Visual Studio can have trouble finding the Xaml Behaviors assembly.  By explicitly handling the
+            //resolution of that assembly, we are able to get around that problem
+            var myAssembly = typeof(Microsoft.Xaml.Behaviors.EventTrigger).Assembly.FullName;
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+                args.Name == myAssembly ? typeof(Microsoft.Xaml.Behaviors.EventTrigger).Assembly : null;
+        }
         public OptionsHelper Options { get; private set; }
 
         protected override SectionContent CreateContent()

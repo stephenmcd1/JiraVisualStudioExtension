@@ -24,6 +24,30 @@ namespace JiraVisualStudioExtension.ViewModels
     [SuppressMessage("Usage", "VSTHRD101:Avoid unsupported async delegates")]
     public class SectionContentViewModel : INotifyPropertyChanged
     {
+        public class IssueTypeViewModel : INotifyPropertyChanged
+        {
+            public JiraMetadata.IssueType IssueType { get; set; }
+
+            public bool IsChecked
+            {
+                get => _isChecked;
+                set
+                {
+                    if (value == _isChecked) return;
+                    _isChecked = value;
+                    OnPropertyChanged();
+                }
+            }
+            private bool _isChecked;
+
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+
         private readonly JiraWorkItemSection _parentSection;
         private JiraHelper _jiraApi;
 
@@ -116,6 +140,17 @@ namespace JiraVisualStudioExtension.ViewModels
 
             RefreshCommand = new RelayCommand(() => HandleAsyncErrors(Refresh, "Error when executing refresh command"));
 
+            ApplyIssueTypesCommand = new RelayCommand(() => HandleAsyncErrors(async () =>
+            {
+                var selectedTypes = IssueTypes.Where(i => i.IsChecked).Select(i => i.IssueType.Name).ToList();
+                _parentSection.Options.SetMultiStringOption("SelectedIssueTypes-" + SubdomainEntry, selectedTypes);
+                IssueTypeText = selectedTypes.Count == 0
+                    ? "Issue Types (all)"
+                    : "Issue Types (" + selectedTypes.Count + ")";
+                await Refresh();
+
+            }, "Updating Issue Type Filters"));
+
             //Setup some initial variables - especially to trigger the property change logic to get everything in a good state
             Initializing = true;
             IsLoggedOn = false;
@@ -157,8 +192,18 @@ namespace JiraVisualStudioExtension.ViewModels
 
             CurrentUserDisplayName = res;
 
-            //TODO: Any additional filters?
             CurrentList = new PagedItemListViewModel(5, "Assignee IN (currentUser())", _jiraApi, ShowError);
+
+            var selectedIssueTypes = _parentSection.Options.GetMultiStringOption("SelectedIssueTypes-" + SubdomainEntry);
+            if (selectedIssueTypes == null)
+            {
+                selectedIssueTypes = new[] { "Sub-task" };
+            }
+            IssueTypes.Reset(_jiraApi.Metadata.IssueTypes.Select(i => new IssueTypeViewModel{IssueType = i, IsChecked = selectedIssueTypes.Contains(i.Name)}));
+            var selectedCount = IssueTypes.Count(i => i.IsChecked);
+            IssueTypeText = selectedCount == 0
+                ? "Issue Types (all)"
+                : "Issue Types (" + selectedCount + ")";
 
             IsLoggedOn = true;
 
@@ -167,24 +212,29 @@ namespace JiraVisualStudioExtension.ViewModels
 
         private string BuildAdHocFilter()
         {
-            if (!IsFilterActive)
+            var filters = new List<string>();
+            
+
+            var selectedIssueTypes = IssueTypes.Where(i => i.IsChecked).Select(i => i.IssueType.Name).ToList();
+            if (selectedIssueTypes.Any())
             {
-                return null;
+                filters.Add("IssueType IN (\"" + string.Join("\",\"", selectedIssueTypes) + "\")");
             }
 
-            string filter = null;
-            if (ExcludeDoneIssues)
+            if (IsFilterActive)
             {
-                filter = "StatusCategory != Done";
+                if (ExcludeDoneIssues)
+                {
+                    filters.Add("StatusCategory != Done");
+                }
+
+                if (!string.IsNullOrWhiteSpace(SummaryFilter))
+                {
+                    filters.Add($"Summary ~ \"{SummaryFilter.Replace("\"", "\\\"")}\"");
+                }
             }
 
-            if (!string.IsNullOrWhiteSpace(SummaryFilter))
-            {
-                var nameFilter = $"Summary ~ \"{SummaryFilter.Replace("\"", "\\\"")}\"";
-                filter = filter == null ? nameFilter : $"({filter}) AND ({nameFilter})";
-            }
-
-            return filter;
+            return filters.Count == 0 ? null : $"({string.Join(") AND (", filters)})";
         }
 
         public async Task Refresh()
@@ -270,6 +320,10 @@ namespace JiraVisualStudioExtension.ViewModels
         private bool _isErrorActive;
         private string _errorMessage;
         private PagedItemListViewModel _currentList;
+        private string _issueTypeText;
+
+        public BatchedObservableCollection<IssueTypeViewModel> IssueTypes { get; } =
+            new BatchedObservableCollection<IssueTypeViewModel>();
 
         public RelayCommand LogOnCommand { get; set; }
         public RelayCommand LogOutCommand { get; set; }
@@ -281,6 +335,8 @@ namespace JiraVisualStudioExtension.ViewModels
         public RelayCommand ToggleFilterCommand { get; set; }
 
         public RelayCommand RefreshCommand { get; set; }
+
+        public RelayCommand ApplyIssueTypesCommand { get; set; }
 
         public PagedItemListViewModel CurrentList
         {
@@ -448,6 +504,17 @@ namespace JiraVisualStudioExtension.ViewModels
             {
                 if (value == _errorMessage) return;
                 _errorMessage = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string IssueTypeText
+        {
+            get { return _issueTypeText; }
+            set
+            {
+                if(value == _issueTypeText) return;
+                _issueTypeText = value;
                 OnPropertyChanged();
             }
         }

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.VisualStudio.Shell;
@@ -36,6 +38,11 @@ namespace JiraVisualStudioExtension.Utilities
                 DataProtectionScope.CurrentUser));
         }
 
+        public IList<string> GetMultiStringOption(string name)
+        {
+            return (string[])GetOption(name);
+        }
+
         public void SetEncryptedOption(string name, string value)
         {
             var encryptedData = ProtectedData.Protect(Encoding.Unicode.GetBytes(value), null, DataProtectionScope.CurrentUser);
@@ -45,6 +52,11 @@ namespace JiraVisualStudioExtension.Utilities
         public void SetStringOption(string name, string value)
         {
             SetOption(name, value, RegistryValueKind.String);
+        }
+
+        public void SetMultiStringOption(string name, IEnumerable<string> values)
+        {
+            SetOption(name, values.ToArray(), RegistryValueKind.MultiString);
         }
 
         private void SetOption(string name, object value, RegistryValueKind valueKind)

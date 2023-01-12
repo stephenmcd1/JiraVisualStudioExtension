@@ -53,7 +53,7 @@ namespace JiraVisualStudioExtension.Utilities
         }
 
         private JiraWebClient _apiClient;
-        private JiraMetadata _metadata;
+        public JiraMetadata Metadata { get; private set; }
 
         public bool IsLoggedOn { get; private set; }
 
@@ -71,7 +71,7 @@ namespace JiraVisualStudioExtension.Utilities
 
             return new QueryResult
             {
-                Results = ((JArray)res["issues"]).Select(o => JiraIssueViewModel.FromApi(o, _metadata, SaveIssue)).ToList(),
+                Results = ((JArray)res["issues"]).Select(o => JiraIssueViewModel.FromApi(o, Metadata, SaveIssue)).ToList(),
                 TotalResultCount = (int)res["total"]
             };
         }
@@ -86,12 +86,23 @@ namespace JiraVisualStudioExtension.Utilities
                 {
                     var fields = JArray.Parse(_apiClient.DownloadString("rest/api/3/field"));
                     var sprintField = (string)fields.SingleOrDefault(f => (string)f["name"] == "Sprint")?["key"];
+                    var issueTypes = JArray.Parse(_apiClient.DownloadString("rest/api/3/issuetype"));
+
                     _cachedMetadata[subDomain] = new JiraMetadata
                     {
-                        SprintFieldName = sprintField
+                        SprintFieldName = sprintField,
+                        IssueTypes = issueTypes
+                            .Select(f => new JiraMetadata.IssueType
+                            {
+                                Name = (string)f["name"],
+                                Description = (string)f["description"]
+                            }).GroupBy(i => i.Name)
+                            .Select(g => g.Count() == 1 ? g.First() : new JiraMetadata.IssueType{Name = g.Key, Description = "(Issue Type exists in multiple projects)"})
+                            .OrderBy(i => i.Name)
+                            .ToList()
                     };
                 }
-                _metadata = _cachedMetadata[subDomain];
+                Metadata = _cachedMetadata[subDomain];
                 IsLoggedOn = true;
                 return (string)resp["displayName"];
             }
