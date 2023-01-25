@@ -144,7 +144,7 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
                 <TextBlock VerticalAlignment="Center" Text="Email:" />
-                <TextBlock VerticalAlignment="Center" Text="Password / API Key:" Grid.Row="1" Grid.Column="0" />
+                <TextBlock VerticalAlignment="Center" Text="API Token:" Grid.Row="1" Grid.Column="0" />
                 <TextBlock VerticalAlignment="Center" Text="Jira Subdomain:" Grid.Row="2" Grid.Column="0" />
 
                 <mtcw:LabeledTextBox Text="{Binding UserNameEntry, Mode=TwoWay}" Margin="5 5 0 5" Grid.Row="0"
