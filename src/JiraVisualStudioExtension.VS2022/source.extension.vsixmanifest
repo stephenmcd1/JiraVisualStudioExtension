@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="JiraVisualStudioExtension.VS2022.415dd6bc-4f51-43c4-852b-24aa9f95732f" Version="1.3.1" Language="en-US" Publisher="Stephen McDaniel" />
+        <Identity Id="JiraVisualStudioExtension.VS2022.415dd6bc-4f51-43c4-852b-24aa9f95732f" Version="1.4.0" Language="en-US" Publisher="Stephen McDaniel" />
         <DisplayName>Jira Extension (VS 2022 Edition)</DisplayName>
         <Description xml:space="preserve">Integrates Jira with Visual Studio including automatic creation of Comments on Issues when code is checked-in and the ability to perform basic editing of Issues - all within the Pending Changes tab of Team Explorer</Description>
         <License>License.txt</License>

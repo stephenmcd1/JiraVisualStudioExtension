@@ -29,18 +29,38 @@ namespace JiraVisualStudioExtension.TeamExplorer
 
         protected override string BaseTitle { get; } = "Jira Issues";
 
+        private Type _tfsViewModelType;
+        private object _tfsViewModelInstance;
+        private PropertyInfo _shelvesetNameProperty;
+
         protected override async Task InitializeAsync()
         {
             Options = new OptionsHelper(ServiceProvider);
 
             //Hook deep into the TFS Pending Changes page
-            var type = Type.GetType("Microsoft.TeamFoundation.VersionControl.Controls.PendingChanges.PendingChangesPageViewModel, Microsoft.TeamFoundation.VersionControl.Controls");
-            var pageModel = ServiceProvider.GetService(type);
-
-            OverwriteCheckinButton(type, pageModel);
-            WatchForCheckIns(type, pageModel);
+            _tfsViewModelType = Type.GetType("Microsoft.TeamFoundation.VersionControl.Controls.PendingChanges.PendingChangesPageViewModel, Microsoft.TeamFoundation.VersionControl.Controls");
+            _tfsViewModelInstance = ServiceProvider.GetService(_tfsViewModelType);
+            
+            _shelvesetNameProperty = _tfsViewModelType.GetProperty("ShelvesetName");
+            if (_shelvesetNameProperty == null)
+            {
+                ShowNotification("Jira Extension Fatal error: Could not find Shelveset name property", NotificationType.Error);
+            }
+            
+            OverwriteCheckinButton();
+            WatchForCheckIns();
+            OverwriteToggleShelvesetButton();
 
             await Content.ViewModel.Initialize();
+        }
+
+        /// <summary>
+        /// Gets or Sets the current Shelveset Name from the Pending Changes panel
+        /// </summary>
+        public string ShelvesetName
+        {
+            get => (string)_shelvesetNameProperty.GetValue(_tfsViewModelInstance);
+            set => _shelvesetNameProperty.SetValue(_tfsViewModelInstance, value);
         }
 
         protected override async Task RefreshAsync()
@@ -48,18 +68,19 @@ namespace JiraVisualStudioExtension.TeamExplorer
             await Content.ViewModel.Refresh();
         }
 
-        private void OverwriteCheckinButton(Type viewModelType, object pageViewModel)
+        private void OverwriteToggleShelvesetButton()
         {
-            //Find the CheckInCommand that powers the Check In button - we want to replace / wrap it with our custom behavior
-            var checkinCommandProp = viewModelType.GetProperty("CheckInCommand");
-            if (checkinCommandProp == null)
+            //Hook into the command that toggles the shelveset option so we can let the view model know after it happens
+            OverwriteRelayCommand("ToggleShelveOptionsCommand", (existingCommand, o) =>
             {
-                ShowNotification("Jira Extension Fatal error: Could not find check-in command", NotificationType.Error);
-                return;
-            }
+                existingCommand.Execute(o);
+                Content.ViewModel.OnToggleShelveset();
+            });
+        }
 
-            var existingCommand = (RelayCommand) checkinCommandProp.GetValue(pageViewModel);
-            var newCommand = new RelayCommand(o =>
+        private void OverwriteCheckinButton()
+        {
+            OverwriteRelayCommand("CheckInCommand", (existingCommand, o) =>
             {
                 //Remember the original comment so we can easily restore it if something goes wrong
                 var origComment = CheckinComment;
@@ -92,17 +113,36 @@ namespace JiraVisualStudioExtension.TeamExplorer
                     //   exception but might as well be careful
                     CheckinComment = origComment;
                 }
-            }, o => existingCommand.CanExecute(o));
-            checkinCommandProp.SetValue(pageViewModel, newCommand);
+            });
         }
 
-        private void WatchForCheckIns(Type viewModelType, object pageViewModel)
+        /// <summary>
+        /// Helper method to replace/extend an existing command
+        /// </summary>
+        private void OverwriteRelayCommand(string propertyName, Action<RelayCommand, object> newAction)
+        {
+            var commandProp = _tfsViewModelType.GetProperty(propertyName);
+            if (commandProp == null)
+            {
+                ShowNotification($"Jira Extension Fatal error: Could not find {propertyName} command", NotificationType.Error);
+                return;
+            }
+
+            var existingCommand = (RelayCommand)commandProp.GetValue(_tfsViewModelInstance);
+            var newCommand = new RelayCommand(o =>
+            {
+                newAction(existingCommand, o);
+            }, o => existingCommand.CanExecute(o));
+            commandProp.SetValue(_tfsViewModelInstance, newCommand);
+        }
+
+        private void WatchForCheckIns()
         {
             //We want to know when the Check In process finishes.  Since it is an async process, we can't just wait for the command to finish.  We'll
             //  hook into an event that is raised when the checkin completes that conveniently provides info about how the process went
             var pc = GetService<IPendingChangesExt>();
-            var checkinCompleteEvent = viewModelType.GetEvent("CheckinCompleted", BindingFlags.Instance | BindingFlags.NonPublic);
-            var lastChangesetProp = viewModelType.GetProperty("LastCheckinChangesetId");
+            var checkinCompleteEvent = _tfsViewModelType.GetEvent("CheckinCompleted", BindingFlags.Instance | BindingFlags.NonPublic);
+            var lastChangesetProp = _tfsViewModelType.GetProperty("LastCheckinChangesetId");
             if (checkinCompleteEvent == null || lastChangesetProp == null)
             {
                 ShowNotification("Jira Extension Fatal error: Could not find checkin-related event/properties", NotificationType.Error);
@@ -111,7 +151,7 @@ namespace JiraVisualStudioExtension.TeamExplorer
 
             EventHandler checkinComplete = (s, e) =>
             {
-                var lastId = (int) lastChangesetProp.GetValue(pageViewModel);
+                var lastId = (int) lastChangesetProp.GetValue(_tfsViewModelInstance);
                 //If this property has a positive number, it means the Check In completely successfully - hand over to the View Model to do it's processing
                 if (lastId > 0)
                 {
@@ -124,8 +164,8 @@ namespace JiraVisualStudioExtension.TeamExplorer
                 }
             };
 
-            checkinCompleteEvent.GetAddMethod(true).Invoke(pageViewModel, new object[] {checkinComplete});
-            AddDisposeAction(() => checkinCompleteEvent.GetRemoveMethod(true).Invoke(pageViewModel, new object[] {checkinComplete}));
+            checkinCompleteEvent.GetAddMethod(true).Invoke(_tfsViewModelInstance, new object[] {checkinComplete});
+            AddDisposeAction(() => checkinCompleteEvent.GetRemoveMethod(true).Invoke(_tfsViewModelInstance, new object[] {checkinComplete}));
         }
 
         public string CheckinComment

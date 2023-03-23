@@ -483,6 +483,14 @@ namespace JiraVisualStudioExtension.ViewModels
                 {
                     i.Selected = i.Key == CurrentItem?.Key;
                 }
+
+                //If the current shelvset name is the same as we set last time (meaning the user didn't enter their own name)
+                //  then we will update it for the new item
+                if (_parentSection.ShelvesetName == _lastShelvesetName)
+                {
+                    _lastShelvesetName = CurrentItem.Key + ": " + CurrentItem.Summary;
+                    _parentSection.ShelvesetName = _lastShelvesetName;
+                }
             }
         }
 
@@ -521,6 +529,20 @@ namespace JiraVisualStudioExtension.ViewModels
 
         #endregion
 
+
+        private string _lastShelvesetName;
+        public void OnToggleShelveset()
+        {
+            //When the shelveset area gets toggled, provide a default name based on the current item (if there is one)
+            if (CurrentItem == null)
+            {
+                _lastShelvesetName = null;
+                return;
+            }
+
+            _lastShelvesetName = CurrentItem.Key + ": " + CurrentItem.Summary;
+            _parentSection.ShelvesetName = _lastShelvesetName;
+        }
 
         public void OnBeforeCheckIn(out bool shouldContinue)
         {
