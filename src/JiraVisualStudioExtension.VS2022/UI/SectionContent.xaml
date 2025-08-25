@@ -380,11 +380,6 @@
                 </ListView>
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Right">
-                        <!--
-                        <Hyperlink x:Name="HyperLink1" TextDecorations="" ToolTip="First Page" Command="{Binding Path=CurrentList.MoveToFirstPageCommand}">
-                             <Polygon Fill="{Binding ElementName=HyperLink1, Path=Foreground}" Margin="2,0,0,1" Points="8,0 8,12 2,7 2,12 0,12 0,0 2,0 2,6 8,0" />
-                        </Hyperlink>
-                         -->
                         <Hyperlink x:Name="HyperLink2" TextDecorations="" ToolTip="Previous Page"
                                    Command="{Binding Path=CurrentList.MoveToPreviousPageCommand}">
                             <Polygon Fill="{Binding ElementName=HyperLink2, Path=Foreground}" Margin="2,0,0,1"

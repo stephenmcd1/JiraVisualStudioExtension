@@ -197,7 +197,7 @@ namespace JiraVisualStudioExtension.ViewModels
             var selectedIssueTypes = _parentSection.Options.GetMultiStringOption("SelectedIssueTypes-" + SubdomainEntry);
             if (selectedIssueTypes == null)
             {
-                selectedIssueTypes = new[] { "Sub-task" };
+                selectedIssueTypes = new[] { "Sub-task", "Task","Bug","Story","Dev Task" };
             }
             IssueTypes.Reset(_jiraApi.Metadata.IssueTypes.Select(i => new IssueTypeViewModel{IssueType = i, IsChecked = selectedIssueTypes.Contains(i.Name)}));
             var selectedCount = IssueTypes.Count(i => i.IsChecked);

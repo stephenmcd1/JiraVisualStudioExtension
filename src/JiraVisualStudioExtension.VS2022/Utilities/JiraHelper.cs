@@ -49,7 +49,7 @@ namespace JiraVisualStudioExtension.Utilities
         public class QueryResult
         {
             public List<JiraIssueViewModel> Results { get; set; }
-            public int TotalResultCount { get; set; }
+            public string NextPageToken { get; set; }
         }
 
         private JiraWebClient _apiClient;
@@ -57,22 +57,23 @@ namespace JiraVisualStudioExtension.Utilities
 
         public bool IsLoggedOn { get; private set; }
 
-        public async Task<QueryResult> GetIssues(string jql, int pageSize, string order = "Key", int start = 0)
+        public async Task<QueryResult> GetIssues(string jql, int pageSize, string order = "Key", string nextPageToken = null)
         {
-            var str = await Task.Run(() => _apiClient.DownloadString(
-                "rest/api/latest/search" +
-                $"?jql={jql} order by {order}" +
-                //TODO: Use JiraIssueViewModel.FetchFields
-                //"&fields=assignee,summary,status,issuetype,project,created,updated,description,comment" +
-                $"&maxResults={pageSize}" +
-                $"&startAt={start}"));
+            var url = "rest/api/latest/search/jql" +
+                      $"?jql={jql} order by {order}" +
+                      "&fields=key,assignee,parent,fixVersions,summary,status,issuetype,project,created,updated,description,comment," + Metadata.SprintFieldName +
+                      $"&maxResults={pageSize}";
+            if (nextPageToken != null)
+                url += "&nextPageToken=" + nextPageToken;
+
+            var str = await Task.Run(() => _apiClient.DownloadString(url));
 
             var res = JObject.Parse(str);
 
             return new QueryResult
             {
                 Results = ((JArray)res["issues"]).Select(o => JiraIssueViewModel.FromApi(o, Metadata, SaveIssue)).ToList(),
-                TotalResultCount = (int)res["total"]
+                NextPageToken = (string)res["nextPageToken"]
             };
         }
 

@@ -21,35 +21,21 @@ namespace JiraVisualStudioExtension.ViewModels
         private readonly string _jql;
         private readonly JiraHelper _jiraApi;
         private readonly Action<string> _onError;
-        private readonly Dictionary<int, List<JiraIssueViewModel>> _cachedPages = new Dictionary<int, List<JiraIssueViewModel>>();
-        private int _totalItems;
+        private readonly Dictionary<int, JiraHelper.QueryResult> _cachedPages = new Dictionary<int, JiraHelper.QueryResult>();
 
         public ObservableCollection<JiraIssueViewModel> Items { get; } = new ObservableCollection<JiraIssueViewModel>();
 
         private int _currentPage = 1;
-        private int? _totalPages;
         private string _pageInfo = "Loading...";
         private string _adHocJql;
+        private bool _hasMorePages = false;
 
         public int CurrentPage
         {
             get { return _currentPage; }
             set
             {
-                if (value == _currentPage) return;
                 _currentPage = value;
-                OnPropertyChanged();
-                HandlePageChange();
-            }
-        }
-
-        public int? TotalPages
-        {
-            get { return _totalPages; }
-            set
-            {
-                if (value == _totalPages) return;
-                _totalPages = value;
                 OnPropertyChanged();
                 HandlePageChange();
             }
@@ -66,7 +52,6 @@ namespace JiraVisualStudioExtension.ViewModels
             }
         }
 
-        public RelayCommand MoveToFirstPageCommand { get; }
         public RelayCommand MoveToPreviousPageCommand { get; }
         public RelayCommand MoveToNextPageCommand { get; }
 
@@ -77,25 +62,19 @@ namespace JiraVisualStudioExtension.ViewModels
             _jiraApi = jiraApi;
             _onError = onError;
 
-            MoveToFirstPageCommand = new RelayCommand(_ => ChangePage(1), _ => CurrentPage != 1);
-            MoveToNextPageCommand = new RelayCommand(_ => ChangePage(CurrentPage + 1), _ => TotalPages != null && CurrentPage < TotalPages);
+            MoveToNextPageCommand = new RelayCommand(_ => ChangePage(CurrentPage + 1), _ => _hasMorePages);
             MoveToPreviousPageCommand = new RelayCommand(_ => ChangePage(CurrentPage - 1), _ => CurrentPage > 1);
         }
 
         private void HandlePageChange()
         {
-            MoveToFirstPageCommand.RaiseCanExecuteChanged();
             MoveToPreviousPageCommand.RaiseCanExecuteChanged();
             MoveToNextPageCommand.RaiseCanExecuteChanged();
 
             var firstItem = (CurrentPage - 1) * _pageSize + 1;
-            var info = "Items " + firstItem + "-" + Math.Min(_totalItems, firstItem + _pageSize - 1);
-            if (firstItem + _pageSize < _totalItems)
-            {
-                info += " of " + _totalItems;
-            }
+            var lastItem = firstItem + Items.Count - 1;
 
-            PageInfo = info;
+            PageInfo = firstItem == lastItem ? $"Item {firstItem}" : $"Items {firstItem}-{lastItem}";
         }
 
         private async void ChangePage(int page)
@@ -119,27 +98,30 @@ namespace JiraVisualStudioExtension.ViewModels
 
         private async Task<List<JiraIssueViewModel>> LoadPage(int pageNumber)
         {
-            List<JiraIssueViewModel> items;
-            if (!_cachedPages.TryGetValue(pageNumber, out items))
+            JiraHelper.QueryResult cached;
+            if (!_cachedPages.TryGetValue(pageNumber, out cached))
             {
+                string nextPageToken = null;
+                if (pageNumber != 1)
+                {
+                    nextPageToken = _cachedPages[pageNumber-1].NextPageToken;
+                }
                 var finalQuery = _adHocJql == null ? _jql : $"({_jql}) AND ({_adHocJql})";
-                var result = await _jiraApi.GetIssues(finalQuery, _pageSize, "updated desc", (pageNumber - 1) * _pageSize);
+                cached = await _jiraApi.GetIssues(finalQuery, _pageSize, "updated desc", nextPageToken);
 
-                _totalItems = result.TotalResultCount;
-                TotalPages = (int)Math.Ceiling(1.0 * _totalItems / _pageSize);
-                items = result.Results;
-                _cachedPages[pageNumber] = items;
+                _cachedPages[pageNumber] = cached;
             }
 
             Items.Clear();
-            foreach (var item in items)
+            foreach (var item in cached.Results)
             {
                 Items.Add(item);
             }
 
+            _hasMorePages = cached.NextPageToken != null;
             CurrentPage = pageNumber;
 
-            return items;
+            return cached.Results;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
