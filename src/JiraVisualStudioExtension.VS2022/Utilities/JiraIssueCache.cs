@@ -33,6 +33,18 @@ namespace JiraVisualStudioExtension.Utilities
 
         public static async Task<(CachedJiraIssue Issue, string Error)> GetIssueAsync(string value, LinkDefinition linkDefinition)
         {
+            if (VS2022Package.UseFakeData)
+            {
+                return (
+                    new CachedJiraIssue
+                    {
+                        Key = value,
+                        Assignee = "That One Guy", Created = new DateTimeOffset(2025, 8, 29, 13, 14, 15, TimeSpan.Zero),
+                        IssueType = "HopeAndPrayer", LoadedAt = DateTimeOffset.Now, Priority = "High",
+                        Status = "In Progress", Summary = "Teach rubber duck to actually debug"
+                    }, null);
+            }
+
             var cacheKey = $"{linkDefinition.MatchType}|{linkDefinition.Details}|{value}";
             if (_cache.TryGetValue(cacheKey, out var cached) && cached.ExpiresAt > DateTimeOffset.Now)
             {

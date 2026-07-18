@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using JiraVisualStudioExtension.Properties;
 using JiraVisualStudioExtension.Utilities;
 using Microsoft.TeamFoundation.MVVM;
+using Newtonsoft.Json.Linq;
 
 namespace JiraVisualStudioExtension.ViewModels
 {
@@ -98,8 +99,11 @@ namespace JiraVisualStudioExtension.ViewModels
 
         private async Task<List<JiraIssueViewModel>> LoadPage(int pageNumber)
         {
-            JiraHelper.QueryResult cached;
-            if (!_cachedPages.TryGetValue(pageNumber, out cached))
+            if (VS2022Package.UseFakeData)
+            {
+                _cachedPages[pageNumber] = GenerateFakeIssues(pageNumber);
+            }
+            if (!_cachedPages.TryGetValue(pageNumber, out var cached))
             {
                 string nextPageToken = null;
                 if (pageNumber != 1)
@@ -122,6 +126,71 @@ namespace JiraVisualStudioExtension.ViewModels
             CurrentPage = pageNumber;
 
             return cached.Results;
+        }
+
+        private JiraHelper.QueryResult GenerateFakeIssues(int pageNumber)
+        {
+            var fakeIssues = new List<(string status, string statusCategory, string colorName, string summary)>
+            {
+                ("To Do", "To Do", "blue-gray", "Coffee machine is plotting world domination"),
+                ("In Progress", "In Progress", "yellow", "Teach rubber duck to actually debug"),
+                ("Done", "Done", "green", "Remove all bugs by deleting code"),
+                ("To Do", "To Do", "blue-gray", "Implement 'it works on my machine' as a service"),
+                ("In Progress", "In Progress", "yellow", "Convert all errors to warnings (they're just suggestions)"),
+                ("Code Review", "In Progress", "yellow", "Replace entire codebase with AI"),
+                ("Done", "Done", "green", "Successfully procrastinated for 3 sprints"),
+                ("To Do", "To Do", "blue-gray", "Fix bug that only appears when demo-ing to client"),
+                ("In Progress", "In Progress", "yellow", "Optimize algorithm by hoping really hard"),
+                ("Testing", "In Progress", "yellow", "Test if QA is paying attention"),
+                ("Done", "Done", "green", "Rename variables to be more confusing"),
+                ("Blocked", "To Do", "blue-gray", "Waiting for Stack Overflow to answer my question"),
+                ("To Do", "To Do", "blue-gray", "Make loading spinner more hypnotic"),
+                ("In Progress", "In Progress", "yellow", "Debug why debugger won't debug"),
+                ("Done", "Done", "green", "Successfully convinced PM feature is working as intended")
+            };
+
+            var startIndex = (pageNumber - 1) * _pageSize;
+            var results = new List<JiraIssueViewModel>();
+
+            var rng = new Random();
+            for (int i = 0; i < _pageSize && startIndex + i < fakeIssues.Count; i++)
+            {
+                var (status, statusCategory, colorName, summary) = fakeIssues[startIndex + i];
+                var issueNumber = rng.Next(1000, 9999);
+
+                var fakeJson = JObject.Parse($@"{{
+                    ""key"": ""DEV-{issueNumber}"",
+                    ""self"": ""https://fakecompany.atlassian.net/rest/api/3/issue/{issueNumber}"",
+                    ""fields"": {{
+                        ""summary"": ""{summary}"",
+                        ""status"": {{
+                            ""name"": ""{status}"",
+                            ""statusCategory"": {{
+                                ""name"": ""{statusCategory}"",
+                                ""colorName"": ""{colorName}""
+                            }}
+                        }},
+                        ""assignee"": {{
+                            ""displayName"": ""Demo User""
+                        }},
+                        ""sprint"": [{{""name"": ""App-Sprint-93""}}],
+                        ""fixVersions"": [{{""description"": ""Q3 2027""}}],
+                        ""parent"": null
+                    }}
+                }}");
+
+                fakeJson["fields"]["parent"] = JObject.FromObject(new
+                    { key = "APP-456", fields = new { summary = "ss", issuetype = new { name = "Epic" } } });
+
+                var fakeMetadata = new JiraMetadata { SprintFieldName = "sprint" };
+                results.Add(JiraIssueViewModel.FromApi(fakeJson, fakeMetadata, _ => { }));
+            }
+
+            return new JiraHelper.QueryResult
+            {
+                Results = results,
+                NextPageToken = startIndex + _pageSize < fakeIssues.Count ? $"page-{pageNumber + 1}" : null
+            };
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

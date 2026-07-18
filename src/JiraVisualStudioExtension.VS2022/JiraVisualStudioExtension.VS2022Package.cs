@@ -22,6 +22,11 @@ namespace JiraVisualStudioExtension
         /// </summary>
         public const string PackageGuidString = "c4c8d19a-8394-4d1a-9d91-675b47d64cb0";
 
+        /// <summary>
+        /// For texting (and making screenshots without sensitive data), fake data can be used
+        /// </summary>
+        public static bool UseFakeData { get; set; } = false;
+
         public static VS2022Package Instance { get; private set; }
         public static DTE Dte { get; set; }
 
