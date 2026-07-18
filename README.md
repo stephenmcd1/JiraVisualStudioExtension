@@ -2,8 +2,12 @@
 This extension integrates Jira with Visual Studio 2022, providing two main features:
 
 1. **Clickable Jira References in Editor** — Automatically detects Jira issue keys (e.g., `//This workaround can be removed once we finish APP-123`) in your code and converts them to clickable links that open directly in your browser.
+<img width="586" height="258" alt="Issue Links in Comments" src="https://github.com/user-attachments/assets/7cd43c61-6a53-43c3-9a4f-73b22276bdb6" />
 
-2. **Team Explorer Integration (TFS only)** — Augments the Pending Changes view with automatic creation of Comments on Issues at check-in and basic exploring of Issues.
+2. **Team Explorer Integration (TFS only)** — Augments the Pending Changes view with automatic creation of Comments on Issues at check-in and basic exploration of Issues.
+<img width="421" height="869" alt="Team Explorer Integration" src="https://github.com/user-attachments/assets/eaf49bf4-14dc-46e8-9158-b612a9c4d261" />
+
+(this extension adds the "Jira Issues" section)
 
 Important notes for Team Explorer features:
 - Required source control plug-in: Visual Studio Team Foundation Server (TFS).
