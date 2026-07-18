@@ -21,6 +21,23 @@ namespace JiraVisualStudioExtension.Utilities
             _serviceProvider = serviceProvider;
         }
 
+        public (string userName, string apiToken, string subdomain) JiraCredentials
+        {
+            get
+            {
+                var userName = GetStringOption("UserName");
+                var apiToken = GetEncryptedOption("Password");
+                var subdomain = GetEncryptedOption("Subdomain");
+                return (userName, apiToken, subdomain);
+            }
+            set
+            {
+                SetStringOption("UserName", value.userName);
+                SetEncryptedOption("Password", value.apiToken);
+                SetEncryptedOption("Subdomain", value.subdomain);
+            }
+        }
+
         public string GetStringOption(string name)
         {
             return (string) GetOption(name);

@@ -88,7 +88,8 @@
             <teamExplorer:DropDownLink Text="{Binding CurrentUserDisplayName}" IsEnabled="{Binding IsLoggedOn}">
                 <teamExplorer:DropDownLink.DropDownMenu>
                     <ContextMenu Placement="Right">
-                        <MenuItem Header="Log Out" Command="{Binding LogOutCommand}" />
+                        <MenuItem Header="Change Credentials" Command="{Binding OpenOptionsCommand}" />
+                        <MenuItem Header="Refresh Using Latest Credentials" Command="{Binding LogOnCommand}" />
                     </ContextMenu>
                 </teamExplorer:DropDownLink.DropDownMenu>
             </teamExplorer:DropDownLink>
@@ -131,57 +132,14 @@
         <StackPanel
             Visibility="{Binding Initializing, Converter={StaticResource TrueToVisibleConverter}, ConverterParameter=Invert}">
 
-            <Grid
+            <StackPanel
                 Visibility="{Binding Path=IsLoggedOn, Converter={StaticResource TrueToVisibleConverter}, ConverterParameter=Invert}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                    <RowDefinition />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-                <TextBlock VerticalAlignment="Center" Text="Email:" />
-                <TextBlock VerticalAlignment="Center" Text="API Token:" Grid.Row="1" Grid.Column="0" />
-                <TextBlock VerticalAlignment="Center" Text="Jira Subdomain:" Grid.Row="2" Grid.Column="0" />
-
-                <mtcw:LabeledTextBox Text="{Binding UserNameEntry, Mode=TwoWay}" Margin="5 5 0 5" Grid.Row="0"
-                                     Grid.Column="1" />
-
-                <PasswordBox CaretBrush="{StaticResource TextBoxTextBrushKey}"
-                             Foreground="{StaticResource TextBoxTextBrushKey}"
-                             Background="{StaticResource TextBoxBrushKey}"
-                             BorderBrush="{StaticResource TextBoxBorderBrushKey}"
-                             mvvm:PasswordBoxAssistant.Password="{Binding Path=PasswordEntry}"
-                             Margin="5 5 0 5" Grid.Row="1" Grid.Column="1">
-                    <PasswordBox.Template>
-                        <ControlTemplate
-                            TargetType="{x:Type PasswordBox}">
-                            <Border
-                                Name="bd"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="1"
-                                Background="{TemplateBinding Background}"
-                                SnapsToDevicePixels="True">
-                                <ScrollViewer Name="PART_ContentHost" Margin="0" />
-                            </Border>
-                        </ControlTemplate>
-                    </PasswordBox.Template>
-                </PasswordBox>
-                
-                <mtcw:LabeledTextBox Text="{Binding SubdomainEntry, Mode=TwoWay}" Margin="5 5 0 5" Grid.Row="2"
-                                     Grid.Column="1" />
-
-                <StackPanel Margin="0 5 0 0" HorizontalAlignment="Right" Orientation="Horizontal" Grid.Row="3"
-                            Grid.ColumnSpan="2" Grid.Column="0">
-                    <Button Command="{Binding LogOnCommand}"
-                            CommandParameter="{Binding ElementName=PasswordBox, Path=Password}">
-                        Log On
-                    </Button>
+                <TextBlock TextWrapping="Wrap" Margin="0 0 0 5"
+                           Text="Configure Jira credentials in Tools &gt; Options &gt; Jira Extension &gt; General." />
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding OpenOptionsCommand}" Content="Open Settings" />
                 </StackPanel>
-            </Grid>
+            </StackPanel>
 
             <StackPanel Visibility="{Binding Path=IsLoggedOn, Converter={StaticResource BooleanToVisibilityConverter}}">
 

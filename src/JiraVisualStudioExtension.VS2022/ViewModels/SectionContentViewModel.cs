@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using JiraVisualStudioExtension.Options;
 using JiraVisualStudioExtension.Properties;
 using JiraVisualStudioExtension.TeamExplorer;
 using JiraVisualStudioExtension.Utilities;
@@ -60,25 +61,18 @@ namespace JiraVisualStudioExtension.ViewModels
             {
                 try
                 {
-                    //Defer to the helper method and then see how it went
                     var res = await TryLogOn();
                     switch (res)
                     {
                         case true:
-                            //On log on, save the values we used for next time and clear out any errors that may have been there from the logon process
-                            _parentSection.Options.SetStringOption("UserName", UserNameEntry);
-                            _parentSection.Options.SetEncryptedOption("Password", PasswordEntry);
-                            _parentSection.Options.SetEncryptedOption("Subdomain", SubdomainEntry);
                             IsErrorActive = false;
                             await Refresh();
                             break;
                         case false:
-                            //On failure, show an error
-                            ShowError("Could not connect to Jira.  Check credentials.");
+                            ShowError("Could not connect to Jira. Check credentials in Tools > Options > Jira Extension.");
                             break;
                         case null:
-                            //Otherwise, not enough info to log in - show a different error
-                            ShowError("Email and Password required");
+                            ShowError("Credentials not configured. Go to Tools > Options > Jira Extension > General.");
                             break;
                     }
                 }
@@ -88,7 +82,11 @@ namespace JiraVisualStudioExtension.ViewModels
                 }
             }, _ => true);
 
-            LogOutCommand = new RelayCommand(arg => IsLoggedOn = false, _ => true);
+            OpenOptionsCommand = new RelayCommand(_ =>
+            {
+                VS2022Package.EnsureLoaded();
+                VS2022Package.Instance?.ShowOptionPage(typeof(GeneralOptions));
+            });
 
             SearchByKeyCommand = new RelayCommand(val =>
             {
@@ -142,8 +140,10 @@ namespace JiraVisualStudioExtension.ViewModels
 
             ApplyIssueTypesCommand = new RelayCommand(() => HandleAsyncErrors(async () =>
             {
+
                 var selectedTypes = IssueTypes.Where(i => i.IsChecked).Select(i => i.IssueType.Name).ToList();
-                _parentSection.Options.SetMultiStringOption("SelectedIssueTypes-" + SubdomainEntry, selectedTypes);
+                var (_, _, subdomain) = VS2022Package.Options.JiraCredentials;
+                _parentSection.Options.SetMultiStringOption("SelectedIssueTypes-" + subdomain, selectedTypes);
                 IssueTypeText = selectedTypes.Count == 0
                     ? "Issue Types (all)"
                     : "Issue Types (" + selectedTypes.Count + ")";
@@ -179,12 +179,14 @@ namespace JiraVisualStudioExtension.ViewModels
 
         private async Task<bool?> TryLogOn()
         {
-            if (string.IsNullOrWhiteSpace(UserNameEntry) || string.IsNullOrWhiteSpace(PasswordEntry) || string.IsNullOrWhiteSpace(SubdomainEntry))
+            var (userName, apiToken, subdomain) = VS2022Package.Options.JiraCredentials;
+
+            if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(apiToken) || string.IsNullOrWhiteSpace(subdomain))
             {
                 return null;
             }
 
-            var res = await Task.Run(() => _jiraApi.TryLogOn(UserNameEntry, PasswordEntry, SubdomainEntry));
+            var res = await Task.Run(() => _jiraApi.TryLogOn(userName, apiToken, subdomain));
             if (res == null)
             {
                 return false;
@@ -194,7 +196,7 @@ namespace JiraVisualStudioExtension.ViewModels
 
             CurrentList = new PagedItemListViewModel(5, "Assignee IN (currentUser())", _jiraApi, ShowError);
 
-            var selectedIssueTypes = _parentSection.Options.GetMultiStringOption("SelectedIssueTypes-" + SubdomainEntry);
+            var selectedIssueTypes = _parentSection.Options.GetMultiStringOption("SelectedIssueTypes-" + subdomain);
             if (selectedIssueTypes == null)
             {
                 selectedIssueTypes = new[] { "Sub-task", "Task","Bug","Story","Dev Task" };
@@ -264,10 +266,6 @@ namespace JiraVisualStudioExtension.ViewModels
 
         public async Task Initialize()
         {
-            UserNameEntry = _parentSection.Options.GetStringOption("UserName");
-            PasswordEntry = _parentSection.Options.GetEncryptedOption("Password");
-            SubdomainEntry = _parentSection.Options.GetEncryptedOption("Subdomain");
-
             _jiraApi = new JiraHelper(ShowError, updatedIssue =>
             {
                 CurrentItem = updatedIssue;
@@ -277,7 +275,7 @@ namespace JiraVisualStudioExtension.ViewModels
             var res = await TryLogOn();
             if (res == false)
             {
-                ShowError("Could not connect to Jira with saved credentials");
+                ShowError("Could not connect to Jira. Check credentials in Tools > Options > Jira Extension.");
             }
 
             await Refresh();
@@ -306,12 +304,9 @@ namespace JiraVisualStudioExtension.ViewModels
 
         #region Properties
 
-        private string _passwordEntry;
-        private string _subdomainEntry;
         private bool _isLoggedOn;
         private string _currentUserDisplayName;
         private bool _initializing;
-        private string _userNameEntry;
         private bool _isSearchingByKey;
         private bool _isFilterActive;
         private bool _excludeDoneIssues;
@@ -326,7 +321,6 @@ namespace JiraVisualStudioExtension.ViewModels
             new BatchedObservableCollection<IssueTypeViewModel>();
 
         public RelayCommand LogOnCommand { get; set; }
-        public RelayCommand LogOutCommand { get; set; }
         public RelayCommand SearchByKeyCommand { get; set; }
         public RelayCommand AddByKeyCommand { get; set; }
         public RelayCommand DismissErrorsCommand { get; set; }
@@ -335,6 +329,7 @@ namespace JiraVisualStudioExtension.ViewModels
         public RelayCommand ToggleFilterCommand { get; set; }
 
         public RelayCommand RefreshCommand { get; set; }
+        public RelayCommand OpenOptionsCommand { get; set; }
 
         public RelayCommand ApplyIssueTypesCommand { get; set; }
 
@@ -388,18 +383,6 @@ namespace JiraVisualStudioExtension.ViewModels
             }
         }
 
-        public string UserNameEntry
-        {
-            get { return _userNameEntry; }
-            set
-            {
-                if (value == _userNameEntry) return;
-                _userNameEntry = value;
-                OnPropertyChanged();
-            }
-        }
-
-
         public bool IsSearchingByKey
         {
             get { return _isSearchingByKey; }
@@ -445,29 +428,6 @@ namespace JiraVisualStudioExtension.ViewModels
                 OnPropertyChanged();
             }
         }
-
-        public string PasswordEntry
-        {
-            get { return _passwordEntry; }
-            set
-            {
-                if (value == _passwordEntry) return;
-                _passwordEntry = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        public string SubdomainEntry
-        {
-            get { return _subdomainEntry; }
-            set
-            {
-                if (value == _subdomainEntry) return;
-                _subdomainEntry = value;
-                OnPropertyChanged();
-            }
-        }
-
 
         public JiraIssueViewModel CurrentItem
         {

@@ -1,0 +1,54 @@
+<UserControl x:Class="JiraVisualStudioExtension.Options.LinkDefinitionOptionsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ir="clr-namespace:JiraVisualStudioExtension.IssueReferences"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="600">
+    <Grid Margin="6">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Margin="0,0,0,6" TextWrapping="Wrap"
+                   Text="Define patterns to detect issue references in code comments. Match Type determines how the matched text is resolved: Exact Match treats it as a Jira issue key, Match Field searches a Jira field (specify field name in Details), Custom uses {0} in Details as a placeholder for the matched text." />
+
+        <DataGrid Grid.Row="1"
+                  x:Name="LinkDefinitionsGrid"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="True"
+                  CanUserDeleteRows="True"
+                  CanUserReorderColumns="False"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="All"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="100" />
+                <DataGridTextColumn Header="Regex Pattern" Binding="{Binding RegexPattern, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                <DataGridComboBoxColumn Header="Match Type" SelectedItemBinding="{Binding MatchType, UpdateSourceTrigger=PropertyChanged}" Width="100">
+                    <DataGridComboBoxColumn.ItemsSource>
+                        <x:Array Type="{x:Type ir:LinkMatchType}">
+                            <ir:LinkMatchType>ExactMatch</ir:LinkMatchType>
+                            <ir:LinkMatchType>MatchField</ir:LinkMatchType>
+                            <ir:LinkMatchType>Custom</ir:LinkMatchType>
+                        </x:Array>
+                    </DataGridComboBoxColumn.ItemsSource>
+                </DataGridComboBoxColumn>
+                <DataGridTextColumn Header="Details" Binding="{Binding Details, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="2" Margin="0,6,0,0">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="ExportButton" Content="Export to Clipboard" Padding="8,3" Click="ExportButton_Click" />
+                <Button x:Name="ImportButton" Content="Import from Clipboard" Padding="8,3" Margin="6,0,0,0" Click="ImportButton_Click" />
+            </StackPanel>
+            <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontStyle="Italic"
+                       Text="Note: Changes only take effect in newly opened editor tabs." />
+        </StackPanel>
+    </Grid>
+</UserControl>
