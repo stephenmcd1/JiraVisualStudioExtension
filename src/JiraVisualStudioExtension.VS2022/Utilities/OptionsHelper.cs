@@ -21,6 +21,20 @@ namespace JiraVisualStudioExtension.Utilities
             _serviceProvider = serviceProvider;
         }
 
+        public string ChangesetUrl
+        {
+            get
+            {
+                var value = GetStringOption("ChangesetUrl");
+                return string.IsNullOrWhiteSpace(value)
+                    ? global::JiraVisualStudioExtension.Utilities.ChangesetUrl.Default
+                    : value;
+            }
+            set => SetStringOption("ChangesetUrl", string.IsNullOrWhiteSpace(value)
+                ? global::JiraVisualStudioExtension.Utilities.ChangesetUrl.Default
+                : value.Trim());
+        }
+
         public (string userName, string apiToken, string subdomain) JiraCredentials
         {
             get

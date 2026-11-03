@@ -23,6 +23,7 @@
     <RootNamespace>JiraVisualStudioExtension</RootNamespace>
     <AssemblyName>JiraVisualStudioExtension.VS2022</AssemblyName>
     <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
+    <RuntimeIdentifiers>win</RuntimeIdentifiers>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <UseCodebase>true</UseCodebase>
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
@@ -83,6 +84,7 @@
     <Compile Include="UI\SectionContent.xaml.cs">
       <DependentUpon>SectionContent.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Utilities\ChangesetUrl.cs" />
     <Compile Include="Utilities\ExtensionMethods.cs" />
     <Compile Include="Utilities\JiraMetadata.cs" />
     <Compile Include="Utilities\ListViewBehaviors.cs" />
