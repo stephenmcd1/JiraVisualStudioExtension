@@ -41,6 +41,18 @@ Out of the box, the extension doesn't know what kind of links to detect. You mus
 - Under the  "Jira Issues" tab, follow the on-screen instructions to configure your Jira connection: enter your Jira instance URL, your username/email, and the API token (use the API token as the password).
 - Click Connect/Save to persist the credentials and enable Jira features in Pending Changes.
 
+### Changeset link in Jira comments
+
+When a changeset is checked in with a Jira issue selected, the comment's **Changeset Number** link and the **View full Changeset information here** link use the changeset URL.
+
+Set it in **Tools > Options > Jira Extension > Jira Connection > Changeset URL**. `{id}` is replaced with the changeset number. For Azure DevOps Server or TFS:
+
+`http://<server>:8080/tfs/<Collection>/<Project>/_versionControl/changeset/{id}`
+
+Clear the box and click **OK** to restore the default.
+
+<img width="1215" height="777" alt="Changeset URL option" src="docs/images/changeset-url-option.png" />
+
 Note: When logging in, you will need to use an API Key for your password. See [Jira Documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) for details on how to create an API Key.
 
 

@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Windows;
+using JiraVisualStudioExtension.Utilities;
 using Microsoft.VisualStudio.Shell;
 
 namespace JiraVisualStudioExtension.Options
@@ -13,13 +14,26 @@ namespace JiraVisualStudioExtension.Options
         public string UserName { get; set; } = "";
         public string ApiToken { get; set; } = "";
         public string Subdomain { get; set; } = "";
+        public string ChangesetUrl { get; set; } = Utilities.ChangesetUrl.Default;
 
-        protected override UIElement Child => _control ??= new CredentialOptionsControl();
+        protected override UIElement Child
+        {
+            get
+            {
+                if (_control == null)
+                {
+                    _control = new CredentialOptionsControl();
+                    _control.Initialize(UserName, ApiToken, Subdomain, ChangesetUrl);
+                }
+
+                return _control;
+            }
+        }
 
         protected override void OnActivate(System.ComponentModel.CancelEventArgs e)
         {
             base.OnActivate(e);
-            _control?.Initialize(UserName, ApiToken, Subdomain);
+            _control?.Initialize(UserName, ApiToken, Subdomain, ChangesetUrl);
         }
 
         protected override void OnApply(PageApplyEventArgs e)
@@ -29,6 +43,7 @@ namespace JiraVisualStudioExtension.Options
                 UserName = _control.UserName;
                 ApiToken = _control.ApiToken;
                 Subdomain = _control.Subdomain;
+                ChangesetUrl = _control.ChangesetUrl;
             }
             base.OnApply(e);
         }
@@ -36,11 +51,13 @@ namespace JiraVisualStudioExtension.Options
         public override void SaveSettingsToStorage()
         {
             VS2022Package.Options.JiraCredentials = (UserName, ApiToken, Subdomain);
+            VS2022Package.Options.ChangesetUrl = ChangesetUrl;
         }
 
         public override void LoadSettingsFromStorage()
         {
             (UserName, ApiToken, Subdomain) = VS2022Package.Options.JiraCredentials;
+            ChangesetUrl = VS2022Package.Options.ChangesetUrl;
         }
     }
 }

@@ -568,7 +568,6 @@ namespace JiraVisualStudioExtension.ViewModels
 
         private bool AddComment(int changesetId, Workspace workspace)
         {
-            var collectionGuid = workspace.VersionControlServer.TeamProjectCollection.InstanceId;
             var cs = workspace.VersionControlServer.GetChangeset(changesetId, true, true);
             var changesetComment = RemoveIssuePrefix(cs.Comment);
             
@@ -604,7 +603,7 @@ namespace JiraVisualStudioExtension.ViewModels
 
             var contents = new List<object>();
 
-            var changesetUrl = $"https://vsrssinttools01/DevTools/cs.axd?cs={changesetId}&pcguid={collectionGuid:D}";
+            var changesetUrl = ChangesetUrl.Format(VS2022Package.Options.ChangesetUrl, changesetId);
 
             contents.Add(new
             {

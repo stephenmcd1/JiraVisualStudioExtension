@@ -15,17 +15,21 @@ namespace JiraVisualStudioExtension.Options
             InitializeComponent();
         }
 
-        public void Initialize(string userName, string apiToken, string subdomain)
+        public void Initialize(string userName, string apiToken, string subdomain, string changesetUrl)
         {
             UserNameBox.Text = userName ?? "";
             ApiTokenBox.Password = apiToken ?? "";
             SubdomainBox.Text = subdomain ?? "";
+            ChangesetUrlBox.Text = string.IsNullOrWhiteSpace(changesetUrl)
+                ? Utilities.ChangesetUrl.Default
+                : changesetUrl;
             StatusText.Text = "";
         }
 
         public string UserName => UserNameBox.Text;
         public string ApiToken => ApiTokenBox.Password;
         public string Subdomain => SubdomainBox.Text;
+        public string ChangesetUrl => ChangesetUrlBox.Text;
 
         private async void TestConnectionButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
